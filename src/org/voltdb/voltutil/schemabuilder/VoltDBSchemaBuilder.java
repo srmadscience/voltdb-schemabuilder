@@ -84,7 +84,18 @@ public final class VoltDBSchemaBuilder {
     String testProcName;
     Object[] testParams;
 
+    /**
+     * As part of the schema creation process we generate a JAR file containing
+     * Java procedures. 'deleteFiles' controls whether this file is deleted at 
+     * the end of the process.
+     */
     private boolean deleteFiles = true;
+    
+    /**
+     * Date format for log messages
+     */
+    static SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
 
     /**
      * Utility class to build a schema.
@@ -98,7 +109,8 @@ public final class VoltDBSchemaBuilder {
      * @param jarFileName
      *            name of Jar file we create
      * @param voltClient
-     *            handle to Volt Client.
+     *            handle to Volt Client. Note we never close it, as we assume somebody else
+     *            needs it for something...
      * @param procPackageName
      *            Java package our stored procs are in
      * @param testProcName
@@ -129,12 +141,11 @@ public final class VoltDBSchemaBuilder {
      * Load classes and DDL
      * 
      * @throws IOException
-     * @throws MissingResourceException
-     * @throws CreatedFileTooBigException
-     * @throws ProcCallException
-     * @throws FailedToUpdateClassesException
-     * @throws FailedToCreateDDLException
-     * @throws Exception
+     * @throws MissingResourceException we can't find a class that's mentioned
+     * @throws CreatedFileTooBigException JAR file is > 45MB
+     * @throws ProcCallException Something went wrong at the DB level when we called UpdateClasses
+     * @throws FailedToUpdateClassesException The DB call to UpdateClasses worked but didn't return SUCCESS.
+     * @throws FailedToCreateDDLException Something wrong with DDL syntax.
      */
     public synchronized boolean loadClassesAndDDLIfNeeded() throws IOException, MissingResourceException,
             CreatedFileTooBigException, FailedToUpdateClassesException, ProcCallException, FailedToCreateDDLException {
@@ -440,7 +451,6 @@ public final class VoltDBSchemaBuilder {
     }
 
     /**
-     * 
      * @return true if we delete JAR files after creation.
      */
     public boolean isDeleteFiles() {
@@ -455,15 +465,24 @@ public final class VoltDBSchemaBuilder {
         this.deleteFiles = deleteFiles;
     }
 
-    public static void error(String message) {
-        msg("Error: " + message);
-
-    }
+    /**
+     * Generic routine to format and print messages.
+     * @param message
+     */
     public static void msg(String message) {
 
-        SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date now = new Date();
         String strDate = sdfDate.format(now);
         System.out.println(strDate + ":" + message);
     }
+
+    /**
+     * Generic routine to format and print error messages.
+     * @param message
+     */
+    public static void error(String message) {
+        msg("Error: " + message);
+
+    }
+ 
 }
